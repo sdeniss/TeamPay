@@ -34,9 +34,6 @@ public class HostTeamFragment extends Fragment{
 
     SharedPreferences preferences;
     EditText priceEt;
-    ListView participantsListView;
-    ArrayList<String> participants;
-    ArrayAdapter<String> participantsAdapter;
     OnStartTeamListener onStartTeamListener;
 
 
@@ -50,7 +47,6 @@ public class HostTeamFragment extends Fragment{
         View rootView = inflater.inflate(R.layout.fragment_host_team, container, false);
         Button startBtn = (Button) rootView.findViewById(R.id.start_btn);
         priceEt = (EditText) rootView.findViewById(R.id.price_et);
-        participantsListView = (ListView) rootView.findViewById(R.id.participants_list_view);
         preferences = getActivity().getSharedPreferences(Const.FILE_PREF, 0);
         startBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -88,8 +84,7 @@ public class HostTeamFragment extends Fragment{
 
         @Override
         protected JSONObject doInBackground(Void... voids) {
-            String request_url = "http://teampay.hostei.com/start-team.php";
-            String teamId;
+            String request_url = "http://teampay.esy.es/start-team.php";
             HttpPost httpPost = new HttpPost(request_url);
             try{
                 JSONObject requestJson = new JSONObject();

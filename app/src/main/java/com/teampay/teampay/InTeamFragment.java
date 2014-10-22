@@ -80,7 +80,7 @@ public class InTeamFragment extends Fragment {
 
         @Override
         protected JSONObject doInBackground(Void... voids) {
-            String request_url = "http://teampay.hostei.com/get-team.php";
+            String request_url = "http://teampay.esy.es/get-team.php";
             HttpPost httpPost = new HttpPost(request_url);
             try{
                 JSONObject requestJson = new JSONObject();
@@ -102,7 +102,7 @@ public class InTeamFragment extends Fragment {
             if(jsonObject == null)
                 return;
             try {
-                priceTv.setText(jsonObject.getString("price"));
+                priceTv.setText(jsonObject.getString("price") + "$");
                 JSONArray jsonArray = jsonObject.getJSONArray("participants");
                 ArrayList<User> users = new ArrayList<User>();
                 for(int i = 0; i < jsonArray.length(); i++){

@@ -27,12 +27,19 @@ public class MainActivity extends ActionBarActivity {
 
     HostTeamFragment hostTeamFragment;
     InTeamFragment inTeamFragment;
+    NearbyTeamsFragment nearbyTeamsFragment;
+
     FragmentTransaction fragTransaction;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        if(getSharedPreferences(Const.FILE_PREF, 0).getString(Const.PREF_USER_ID, "").equals("")){
+            Intent i = new Intent(MainActivity.this, LoginActivity.class);
+            startActivity(i);
+        }
 
         final FragmentManager fragMan = getSupportFragmentManager();
         fragTransaction  = fragMan.beginTransaction();
@@ -43,12 +50,17 @@ public class MainActivity extends ActionBarActivity {
                 inTeamFragment = new InTeamFragment(teamId);
                 fragTransaction = fragMan.beginTransaction();
                 fragTransaction.remove(hostTeamFragment);
+                fragTransaction.remove(nearbyTeamsFragment);
                 fragTransaction.add(R.id.root_layout, inTeamFragment);
                 fragTransaction.commit();
             }
         });
 
+        nearbyTeamsFragment = new NearbyTeamsFragment();
+
+
         fragTransaction.add(R.id.root_layout, hostTeamFragment).commit();
+        fragTransaction.add(R.id.root_layout, nearbyTeamsFragment);
 
 
     }
