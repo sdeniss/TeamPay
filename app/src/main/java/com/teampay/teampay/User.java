@@ -1,5 +1,7 @@
 package com.teampay.teampay;
 
+import android.content.SharedPreferences;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -7,16 +9,17 @@ import org.json.JSONObject;
  * Created by denis on 22/10/14.
  */
 public class User {
+    String id;
     String name;
     Double income;
     Double balance;
 
-    public User(String name, Double income, Double balance) {
+    public User(String id, String name, Double income, Double balance) {
+        this.id = id;
         this.name = name;
         this.income = income;
         this.balance = balance;
     }
-
 
     public JSONObject toJson(){
         JSONObject jsonObject = new JSONObject();
@@ -29,5 +32,10 @@ public class User {
         }
         return jsonObject;
     }
+
+    public static User fromJson(JSONObject jsonObject) throws JSONException{
+        return new User(jsonObject.getString("userId"), jsonObject.getString("name"), jsonObject.getDouble("income"), jsonObject.getDouble("balance"));
+    }
+
 
 }

@@ -8,4 +8,5 @@ public class Const {
     public static final String PREF_NAME = "name";
     public static final String PREF_BALANCE = "balance";
     public static final String PREF_INCOME = "income";
+    public static final String PREF_USER_ID = "userId";
 }
