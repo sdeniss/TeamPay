@@ -88,15 +88,15 @@ public class HostTeamFragment extends Fragment{
 
         @Override
         protected JSONObject doInBackground(Void... voids) {
-            String request_url = "";
+            String request_url = "http://teampay.hostei.com/start-team.php";
             String teamId;
             HttpPost httpPost = new HttpPost(request_url);
             try{
-                User me = new User(preferences.getString(Const.PREF_NAME, ""), Double.parseDouble(preferences.getString(Const.PREF_BALANCE, "0.0")), Double.parseDouble(preferences.getString(Const.PREF_INCOME, "0.0")));
-                JSONObject requestJson = me.toJson();
+                JSONObject requestJson = new JSONObject();
                 requestJson.put("price", price);
                 requestJson.put("longitude", location.getLongitude());
                 requestJson.put("latitude", location.getLatitude());
+                requestJson.put("userId", preferences.getString(Const.PREF_USER_ID, "1"));
                 httpPost.setEntity(new StringEntity(requestJson.toString()));
                 HttpClient httpClient = new DefaultHttpClient();
                 HttpResponse response = httpClient.execute(httpPost);

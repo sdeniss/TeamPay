@@ -26,19 +26,25 @@ public class MainActivity extends ActionBarActivity {
 
 
     HostTeamFragment hostTeamFragment;
+    InTeamFragment inTeamFragment;
+    FragmentTransaction fragTransaction;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        FragmentManager fragMan = getSupportFragmentManager();
-        FragmentTransaction fragTransaction = fragMan.beginTransaction();
+        final FragmentManager fragMan = getSupportFragmentManager();
+        fragTransaction  = fragMan.beginTransaction();
 
         hostTeamFragment = new HostTeamFragment(new HostTeamFragment.OnStartTeamListener() {
             @Override
             public void onStartTeam(String teamId) {
-
+                inTeamFragment = new InTeamFragment(teamId);
+                fragTransaction = fragMan.beginTransaction();
+                fragTransaction.remove(hostTeamFragment);
+                fragTransaction.add(R.id.root_layout, inTeamFragment);
+                fragTransaction.commit();
             }
         });
 
