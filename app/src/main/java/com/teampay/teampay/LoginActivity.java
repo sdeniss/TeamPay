@@ -1,5 +1,6 @@
 package com.teampay.teampay;
 
+import android.app.Application;
 import android.content.SharedPreferences;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -25,6 +26,7 @@ public class LoginActivity extends ActionBarActivity {
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putString(Const.PREF_USER_ID,idEt.getText().toString());
                 editor.commit();
+                finish();
             }
         });
     }
@@ -35,6 +37,12 @@ public class LoginActivity extends ActionBarActivity {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_login, menu);
         return true;
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        System.exit(0);
     }
 
     @Override

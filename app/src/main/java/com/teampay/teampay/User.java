@@ -33,6 +33,18 @@ public class User {
         return jsonObject;
     }
 
+    public String getId(){
+        return id;
+    }
+
+    public Double getBalance(){
+        return balance;
+    }
+
+    public Double getIncome(){
+        return income;
+    }
+
     public static User fromJson(JSONObject jsonObject) throws JSONException{
         return new User(jsonObject.getString("userId"), jsonObject.getString("name"), jsonObject.getDouble("income"), jsonObject.getDouble("balance"));
     }

@@ -22,7 +22,12 @@
         </activity>
         <activity
             android:name="com.teampay.teampay.LoginActivity"
-            android:label="@string/title_activity_login" >
+            android:label="Login to TeamPay" >
+        </activity>
+
+        <activity android:name=".InGroupActivity"
+            android:label="Paying...">
+
         </activity>
     </application>
 

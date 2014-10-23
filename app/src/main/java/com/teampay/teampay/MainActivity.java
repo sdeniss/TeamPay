@@ -47,16 +47,34 @@ public class MainActivity extends ActionBarActivity {
         hostTeamFragment = new HostTeamFragment(new HostTeamFragment.OnStartTeamListener() {
             @Override
             public void onStartTeam(String teamId) {
+                /*
                 inTeamFragment = new InTeamFragment(teamId);
                 fragTransaction = fragMan.beginTransaction();
                 fragTransaction.remove(hostTeamFragment);
                 fragTransaction.remove(nearbyTeamsFragment);
                 fragTransaction.add(R.id.root_layout, inTeamFragment);
-                fragTransaction.commit();
+                fragTransaction.commit();*/
+                Intent i = new Intent(MainActivity.this, InGroupActivity.class);
+                i.putExtra("teamId", teamId);
+                startActivity(i);
             }
         });
 
-        nearbyTeamsFragment = new NearbyTeamsFragment();
+        nearbyTeamsFragment = new NearbyTeamsFragment(new NearbyTeamsFragment.OnJoinTeamListener() {
+            @Override
+            public void onJoinTeam(String teamId) {
+                Intent i = new Intent(MainActivity.this, InGroupActivity.class);
+                i.putExtra("teamId", teamId);
+                startActivity(i);
+            /*
+                inTeamFragment = new InTeamFragment(teamId);
+                fragTransaction = fragMan.beginTransaction();
+                fragTransaction.remove(hostTeamFragment);
+                fragTransaction.remove(nearbyTeamsFragment);
+                fragTransaction.add(R.id.root_layout, inTeamFragment);
+                fragTransaction.commit();*/
+            }
+        });
 
 
         fragTransaction.add(R.id.root_layout, hostTeamFragment).commit();

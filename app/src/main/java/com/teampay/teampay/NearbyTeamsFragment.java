@@ -1,6 +1,7 @@
 package com.teampay.teampay;
 
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.location.Location;
 import android.os.AsyncTask;
@@ -10,6 +11,7 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -38,6 +40,12 @@ public class NearbyTeamsFragment extends Fragment {
     TeamsAdapter teamsAdapter;
     List<Team> teams;
     Location currentLocation;
+    OnJoinTeamListener onJoinTeamListener;
+
+    public NearbyTeamsFragment(OnJoinTeamListener onJoinTeamListener){
+        this.onJoinTeamListener = onJoinTeamListener;
+    }
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -64,9 +72,74 @@ public class NearbyTeamsFragment extends Fragment {
             }
         }, 0, 1000);
 
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                new TeamJoinTask(teams.get(i).id).execute();
+            }
+        });
 
+        listView.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                new TeamJoinTask(teams.get(i).id).execute();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
 
         return rootView;
+    }
+
+
+    class TeamJoinTask extends AsyncTask<Void,Void,Boolean>{
+
+        String teamId;
+        ProgressDialog progressDialog;
+
+        public TeamJoinTask(String teamId){
+            this.teamId = teamId;
+        }
+
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog = ProgressDialog.show(getActivity(), null, "JOINING TEAM...");
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... voids) {
+            String url = "http://teampay.esy.es/join-team.php";
+            HttpPost httpPost = new HttpPost(url);
+            try{
+                JSONObject requestJson = new JSONObject();
+                requestJson.put("userId", getActivity().getSharedPreferences(Const.FILE_PREF,0).getString(Const.PREF_USER_ID,""));
+                requestJson.put("teamId", teamId);
+                httpPost.setEntity(new StringEntity(requestJson.toString()));
+                HttpClient httpClient = new DefaultHttpClient();
+                HttpResponse httpResponse = httpClient.execute(httpPost);
+                String response_ = EntityUtils.toString(httpResponse.getEntity());
+                JSONObject responseJson = new JSONObject(response_);
+                return responseJson.getBoolean("success");
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+            return false;
+        }
+
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            super.onPostExecute(success);
+            progressDialog.dismiss();
+            if(success && onJoinTeamListener != null){
+                onJoinTeamListener.onJoinTeam(teamId);
+            }
+        }
     }
 
 
@@ -171,6 +244,10 @@ public class NearbyTeamsFragment extends Fragment {
             priceTv.setText(teams.get(position).price + "$");
             return rootView;
         }
+    }
+
+    interface OnJoinTeamListener{
+        public void onJoinTeam(String teamId);
     }
 
 }

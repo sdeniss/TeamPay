@@ -3,11 +3,13 @@ package com.teampay.teampay;
 import android.app.ProgressDialog;
 import android.content.Entity;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -35,9 +37,11 @@ import java.util.TimerTask;
 public class InTeamFragment extends Fragment {
 
     private String teamId;
+    Double price = 0.0;
     ListView listView;
     SharedPreferences preferences;
-    TextView priceTv;
+    TextView priceTv, myPriceTv;
+    ArrayList<User> users;
 
     public InTeamFragment(String teamId){
         this.teamId = teamId;
@@ -47,7 +51,9 @@ public class InTeamFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         View rootView = inflater.inflate(R.layout.fragment_in_team, container, false);
+        users = new ArrayList<User>();
         priceTv = (TextView) rootView.findViewById(R.id.price_tv);
+        myPriceTv = (TextView) rootView.findViewById(R.id.my_price_tv);
         preferences = getActivity().getSharedPreferences(Const.FILE_PREF, 0);
         listView = (ListView) rootView.findViewById(R.id.list_view);
         Timer timer = new Timer();
@@ -57,13 +63,82 @@ public class InTeamFragment extends Fragment {
                 new TeamInfoGetterTask(teamId).execute();
             }
         }, 0, 2000);
+
+        myPriceTv.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if(motionEvent.getAction() == MotionEvent.ACTION_DOWN){
+                    myPriceTv.setTextColor(Color.parseColor("#848484"));
+                    Double myPrice = Algorithm.PaymentCost(users, preferences.getString(Const.PREF_USER_ID,""), price);
+                    myPriceTv.setText(myPrice.toString() + "$");
+                }else if(motionEvent.getAction() == MotionEvent.ACTION_UP){
+                    myPriceTv.setTextColor(Color.parseColor("#000000"));
+                    myPriceTv.setText("Hold to show how much you'll pay");
+                }
+                return true;
+            }
+        });
+
         return rootView;
     }
 
 
 
 
+    public void leaveTeam(TeamLeaveCallback teamLeaveCallback){
+        new LeaveTeamTask(teamLeaveCallback).execute();
+    }
 
+    class LeaveTeamTask extends AsyncTask<Void,Void,Boolean>{
+
+        ProgressDialog progressDialog;
+        TeamLeaveCallback teamLeaveCallback;
+
+        public LeaveTeamTask(TeamLeaveCallback teamLeaveCallback){
+            this.teamLeaveCallback = teamLeaveCallback;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog = ProgressDialog.show(getActivity(), null, "Leaving team...");
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... voids) {
+            String url = "http://teampay.esy.es/leave-team.php";
+            HttpPost httpPost = new HttpPost(url);
+            try{
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("userId", preferences.getString(Const.PREF_USER_ID, ""));
+                jsonObject.put("teamId", teamId);
+                httpPost.setEntity(new StringEntity(httpPost.toString()));
+                HttpClient httpClient = new DefaultHttpClient();
+                HttpResponse httpResponse = httpClient.execute(httpPost);
+                String response = EntityUtils.toString(httpResponse.getEntity());
+                return new JSONObject(response).getBoolean("success");
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            super.onPostExecute(success);
+            progressDialog.dismiss();
+            if(teamLeaveCallback != null)
+                teamLeaveCallback.onTeamLeave(success);
+        }
+
+
+    }
+
+
+
+    interface TeamLeaveCallback{
+        public void onTeamLeave(boolean success);
+    }
 
 
 
@@ -102,9 +177,10 @@ public class InTeamFragment extends Fragment {
             if(jsonObject == null)
                 return;
             try {
+                price = jsonObject.getDouble("price");
                 priceTv.setText(jsonObject.getString("price") + "$");
                 JSONArray jsonArray = jsonObject.getJSONArray("participants");
-                ArrayList<User> users = new ArrayList<User>();
+                users.clear();
                 for(int i = 0; i < jsonArray.length(); i++){
                     users.add(User.fromJson(jsonArray.getJSONObject(i)));
                 }
