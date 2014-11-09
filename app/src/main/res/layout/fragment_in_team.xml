@@ -20,10 +20,30 @@
         android:textSize="17dp"/>
 
 
+
+    <Button
+        android:visibility="gone"
+        android:id="@+id/pay_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="PAY!"/>
+
+
+
     <ListView
         android:id="@+id/list_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="1dp"
+        android:layout_weight="1"/>
+
+    <CheckBox
+        android:visibility="gone"
+        android:id="@+id/ready_cb"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Ready"
+        android:checked="false"/>
+
 
 
 

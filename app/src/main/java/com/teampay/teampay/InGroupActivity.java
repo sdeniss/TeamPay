@@ -17,7 +17,7 @@ public class InGroupActivity extends FragmentActivity{
         setContentView(R.layout.activity_in_group);
         if(savedInstanceState != null)
             return;
-        inTeamFragment = new InTeamFragment(getIntent().getExtras().getString("teamId"));
+        inTeamFragment = new InTeamFragment(getIntent().getExtras().getString("teamId"), getIntent().getExtras().getBoolean("isHost", false));
         getSupportFragmentManager().beginTransaction().add(R.id.container, inTeamFragment).commit();
     }
 

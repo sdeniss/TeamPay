@@ -18,6 +18,7 @@ import android.widget.TextView;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -36,11 +37,12 @@ import java.util.TimerTask;
  */
 public class NearbyTeamsFragment extends Fragment {
 
-    ListView listView;
-    TeamsAdapter teamsAdapter;
-    List<Team> teams;
-    Location currentLocation;
-    OnJoinTeamListener onJoinTeamListener;
+
+    ListView listView;              //Team listView
+    TeamsAdapter teamsAdapter;      //List Adapter
+    List<Team> teams;               //Team list
+    Location currentLocation;       //Current location
+    OnJoinTeamListener onJoinTeamListener;  //Interface to handle team joining in UI
 
     public NearbyTeamsFragment(OnJoinTeamListener onJoinTeamListener){
         this.onJoinTeamListener = onJoinTeamListener;
@@ -56,29 +58,25 @@ public class NearbyTeamsFragment extends Fragment {
         teamsAdapter = new TeamsAdapter(getActivity(), teams);
         listView.setAdapter(teamsAdapter);
 
-        new AccurateLocationManager(20,getActivity(), new AccurateLocationManager.OnLocationAccurateListener() {
+        //Wait for 50m GPS accuracy and set currentLocation to the acquired location
+        new AccurateLocationManager(50,getActivity(), new AccurateLocationManager.OnLocationAccurateListener() {
             @Override
             public void OnLocationAccurate(Location location) {
                 currentLocation = location;
             }
         });
 
+        //Update teams every 1 sec
         Timer timer = new Timer();
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 if(currentLocation != null)
-                    new TeamGetterTask(currentLocation, 20).execute();
+                    new TeamGetterTask(currentLocation, 50).execute();
             }
         }, 0, 1000);
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                new TeamJoinTask(teams.get(i).id).execute();
-            }
-        });
-
+        //Join team after selecting
         listView.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
@@ -90,12 +88,13 @@ public class NearbyTeamsFragment extends Fragment {
 
             }
         });
-
         return rootView;
     }
 
 
+    //AsyncTask to join teams
     class TeamJoinTask extends AsyncTask<Void,Void,Boolean>{
+
 
         String teamId;
         ProgressDialog progressDialog;
@@ -113,10 +112,12 @@ public class NearbyTeamsFragment extends Fragment {
 
         @Override
         protected Boolean doInBackground(Void... voids) {
-            String url = "http://teampay.esy.es/join-team.php";
+            //New API uses /index.php for all calls, receives apiCall as a JSON param
+            String url = Const.ROOT_URL + "/index.php";
             HttpPost httpPost = new HttpPost(url);
             try{
                 JSONObject requestJson = new JSONObject();
+                requestJson.put("apiCall", "join-team");
                 requestJson.put("userId", getActivity().getSharedPreferences(Const.FILE_PREF,0).getString(Const.PREF_USER_ID,""));
                 requestJson.put("teamId", teamId);
                 httpPost.setEntity(new StringEntity(requestJson.toString()));
@@ -137,12 +138,14 @@ public class NearbyTeamsFragment extends Fragment {
             super.onPostExecute(success);
             progressDialog.dismiss();
             if(success && onJoinTeamListener != null){
+                //Notify parent to show in-team UI
                 onJoinTeamListener.onJoinTeam(teamId);
             }
         }
     }
 
 
+    //AsyncTask to load nearby teams
     class TeamGetterTask extends AsyncTask<Void,Void,JSONArray>{
 
         private Double range;
@@ -155,16 +158,12 @@ public class NearbyTeamsFragment extends Fragment {
 
         @Override
         protected JSONArray doInBackground(Void... voids) {
-            String request_url = "http://teampay.esy.es/GetTeams.php";
-            HttpPost httpPost = new HttpPost(request_url);
+            //For many reasons, currently returns all teams
+            String request_url = Const.ROOT_URL + "/all-teams.php";
+            HttpGet httpGet = new HttpGet(request_url);
             try{
-                JSONObject requestJson = new JSONObject();
-                requestJson.put("latitude", location.getLatitude());
-                requestJson.put("longitude", location.getLongitude());
-                requestJson.put("range", range);
-                httpPost.setEntity(new StringEntity(requestJson.toString()));
                 HttpClient httpClient = new DefaultHttpClient();
-                HttpResponse response = httpClient.execute(httpPost);
+                HttpResponse response = httpClient.execute(httpGet);
                 return new JSONArray(EntityUtils.toString(response.getEntity()));
             }catch (Exception e){
                 e.printStackTrace();
@@ -177,23 +176,57 @@ public class NearbyTeamsFragment extends Fragment {
             super.onPostExecute(jsonArray);
             if(jsonArray == null)
                 return;
+
+            //Refresh teams array
             teams.clear();
             for(int i = 0; i < jsonArray.length(); i++){
                 try {
                     JSONObject jsonObject = jsonArray.getJSONObject(i);
-                    Team team = new Team();
-                    team.name = jsonObject.getString("teamName");
-                    team.price = jsonObject.getDouble("price");
-                    team.id = jsonObject.getString("id");
-                    teams.add(team);
+                    Double distance = distance(jsonObject.getDouble("lat"), jsonObject.getDouble("lng"), location.getLatitude(), location.getLongitude(), 'M');
+                    if(distance <= range) {
+                        Team team = new Team();
+                        team.name = jsonObject.getString("name");
+                        team.price = jsonObject.getDouble("price");
+                        team.id = jsonObject.getString("teamId");
+                        teams.add(team);
+                    }
                 }catch (Exception e){
                     e.printStackTrace();
                 }
             }
+            //Notify teamsListView adapter
             teamsAdapter.notifyDataSetChanged();
         }
     }
 
+    private double distance(double lat1, double lon1, double lat2, double lon2, char unit) {
+        double theta = lon1 - lon2;
+        double dist = Math.sin(deg2rad(lat1)) * Math.sin(deg2rad(lat2)) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.cos(deg2rad(theta));
+        dist = Math.acos(dist);
+        dist = rad2deg(dist);
+        dist = dist * 60 * 1.1515;
+        if (unit == 'K') {
+            dist = dist * 1.609344;
+        } else if (unit == 'N') {
+            dist = dist * 0.8684;
+        } else if(unit == 'M'){
+            return  distance(lat1,lon1,lat2,lon2,'K')/1000;
+        }
+        return (dist);
+    }
+    //Converts decimal degrees to radians
+    private double deg2rad(double deg) {
+        return (deg * Math.PI / 180.0);
+    }
+
+
+    //Converts radians to decimal degrees
+    private double rad2deg(double rad) {
+        return (rad * 180.0 / Math.PI);
+    }
+
+
+    //Team struct
     class Team{
         String name;
         String id;
@@ -222,6 +255,7 @@ public class NearbyTeamsFragment extends Fragment {
 
 
 
+    //teamsListView adapter
     class TeamsAdapter extends ArrayAdapter<Team>{
 
         List<Team> teams;
@@ -246,6 +280,10 @@ public class NearbyTeamsFragment extends Fragment {
         }
     }
 
+
+
+
+    //Interface to notify parent to show in-team UI
     interface OnJoinTeamListener{
         public void onJoinTeam(String teamId);
     }

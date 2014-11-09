@@ -51,7 +51,7 @@ public class HostTeamFragment extends Fragment{
         startBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                new AccurateLocationManager(20, getActivity(), new AccurateLocationManager.OnLocationAccurateListener() {
+                new AccurateLocationManager(40, getActivity(), new AccurateLocationManager.OnLocationAccurateListener() {
                     @Override
                     public void OnLocationAccurate(Location location) {
                         new StartTeamTask(Double.parseDouble(priceEt.getText().toString()), location).execute();
@@ -84,10 +84,11 @@ public class HostTeamFragment extends Fragment{
 
         @Override
         protected JSONObject doInBackground(Void... voids) {
-            String request_url = "http://teampay.esy.es/start-team.php";
+            String request_url = Const.ROOT_URL + "/index.php";
             HttpPost httpPost = new HttpPost(request_url);
             try{
                 JSONObject requestJson = new JSONObject();
+                requestJson.put("apiCall", "start-team");
                 requestJson.put("price", price);
                 requestJson.put("longitude", location.getLongitude());
                 requestJson.put("latitude", location.getLatitude());

@@ -26,10 +26,11 @@ public class MainActivity extends ActionBarActivity {
 
 
     HostTeamFragment hostTeamFragment;
-    InTeamFragment inTeamFragment;
     NearbyTeamsFragment nearbyTeamsFragment;
 
     FragmentTransaction fragTransaction;
+
+    //Please note: InTeamFragment:Fragment was replaced by InGroupActivity:Activity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +57,7 @@ public class MainActivity extends ActionBarActivity {
                 fragTransaction.commit();*/
                 Intent i = new Intent(MainActivity.this, InGroupActivity.class);
                 i.putExtra("teamId", teamId);
+                i.putExtra("isHost", true);
                 startActivity(i);
             }
         });
@@ -77,8 +79,10 @@ public class MainActivity extends ActionBarActivity {
         });
 
 
+
+        //Insert frags
         fragTransaction.add(R.id.root_layout, hostTeamFragment).commit();
-        fragTransaction.add(R.id.root_layout, nearbyTeamsFragment);
+        fragTransaction.add(R.id.root_layout, nearbyTeamsFragment).commit();
 
 
     }
